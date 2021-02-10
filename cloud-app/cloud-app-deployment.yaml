@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-app-deployment
+  namespace: cloud
+  labels:
+    app: cloud-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cloud-app
+  template:
+    metadata:
+      labels:
+        app: cloud-app
+    spec:
+      containers:
+      - name: cloud-app
+        image: cimox/cloud-app:0.0.1
+        ports:
+        - containerPort: 5000
+        env:
+          - name: CLOUD_APP_HOST
+            value: '0.0.0.0'
+          - name: CLOUD_APP_PORT
+            value: '5000'
+          - name: EDGE_API_URL
+            value: 'http://cluster-dns.edge.edge-app'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-app-service
+  namespace: cloud
+spec:
+  selector:
+    app: cloud-app
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
