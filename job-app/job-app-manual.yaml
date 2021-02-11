@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: job-app-
+  namespace: jobs
+spec:
+  template:
+    spec:
+      containers:
+      - name: job-app
+        image: cimox/job-app:0.0.4
+        env:
+          - name: EDGE_API_URL
+            value: 'http://edge-app-service.edge.svc.cluster.local:5000/job'
+          - name: JOB_TYPE
+            value: 'stateless'
+        volumeMounts:
+          - mountPath: /mnt/storage
+            name: storage
+      volumes:
+        - name: storage
+          emptyDir: {}
+      restartPolicy: Never
+  backoffLimit: 1

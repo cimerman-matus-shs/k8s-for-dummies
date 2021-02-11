@@ -41,6 +41,7 @@ List creates namespaces. Note that some "system" namespaces already did exist.
 ```
 
 ### Deploy first service Cloud APP
+Deployments docs: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 
 TODO: describe YAML file key points here
 
@@ -66,6 +67,7 @@ cloud-app-deployment-76c4547875-vvndf   1/1     Running   0          2m22s
 ```
 
 See, if we can communicate with the deployed app in the Kubernetes cluster. To do that, we need to access `cloud-app` related service named `cloud-app-service`. To do that, we can use port forwarding feature of the Kubernetes.
+Port forwarding docs: https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/
 ```
 > kubectl port-forward service/cloud-app-service 5000:5000 -n cloud
 
@@ -103,6 +105,7 @@ edge-app-deployment-6f7bc44796-s5klz   1/1     Running   0          114s
 We will not expose or port-forward `edge-app`, because it can be accessed via `cloud-app`. Let's see how that works.
 
 ### Establishing communication between two services across namespaces
+Port forwarding docs: https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/
 
 First, let's expose `cloud-app`, so we can query it directly
 ```
@@ -122,11 +125,11 @@ Starting stateless job
 Notice that `EDGE_API_URL` environment variable needs to be correctly set to the `'http://edge-app-service.edge.svc.cluster.local:5000/job'` which is Kubernetes internal DNS resolution of the `edge-app-service` running in the `edge` namespace. If this variable was incorrectly set, communication between services would not work.
 
 ### Start a stateless Job with Ephemeral storage and see how it works
-
+Volumes docs: https://kubernetes.io/docs/concepts/storage/volumes/
 
 
 ### Start a stateful Job with Persistent Volume claim disk attached
-
+Persistent Volumes docs: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
 
 
 ### Exec into the running pod
