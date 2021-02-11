@@ -13,20 +13,26 @@ Choose one:
 
 # Kubernetes crash course aka K8s for dummies (1 hour)
 
-## TODO Describe scenario here
+## Demo scenario description
 In this tutorial we will use pre-built docker images published on Dockerhub to ease the job. For further details how to define and build docker images please see Docker documentation.
 
 **You will learn**
 - How to deploy application with several replicas and access it via Service.
 - Deploy second service in a separated namespace and establish communication between two services.
+- Establish communication between two service running in a separated namespaces (`cloud` and `edge`).
+- Manually start jobs with Volume (ephemeral) storage na Persistent Volume storage claim.
+- See how port-forwarding works in practice.
+- Explore logs of the running pods.
+- Assign resources requests (CPU, memory) to the pods.
+- Control pod lifecycle using Kubernetes probes.
 
 
-TODO to mention:
-- helm
-- terraform
-- rbac
-- replace \ with /
-- minikube dashboard
+Tools not mentioned in this tutorial, but recommended to study:
+- [Helm](https://helm.sh/) as a Kubernetes package manager.
+- [Helm Charts](https://helm.sh/docs/topics/charts/) to programatically desribe Kubernetes deployments. This is super useful, when you're running several services in K8s, or got multiple environments to operate. Generally it will make your life easier when managing K8s.
+- [Terraform](https://www.terraform.io/) to configure underlying Kubernetes infrastructure, networking, but also RBAC.
+- [RBAC (Role based access control)](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) is useful to manage access right of a given applications running inside the cluster. For example, some applications might not be able to access apps from other namespace, or start the jobs, etc.
+- [Kubernetes Dashboard](https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/) Kubernetes provides Web UI / Dashboard to see and troubleshoot apps running in the cluster.
 
 ### 1 Create namespaces
 [Kubernetes supports multiple virtual clusters backed by the same physical cluster. These virtual clusters are called namespaces.](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/)
@@ -43,9 +49,10 @@ List creates namespaces. Note that some "system" namespaces already did exist.
 ```
 
 ### 2 Deploy first service Cloud APP
-Deployments docs: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
-
-TODO: describe YAML file key points here
+To better understand Kubernetes spec YAML files, I recommend reading through:
+- [Understanding Kubernetes Objects](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/)
+- [Deployment docs](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+- [Deployment v1 apps API spec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#deployment-v1-apps)
 
 Deployment of the app with 3 replicas together with a related Service.
 ```
@@ -138,7 +145,7 @@ Volumes docs: https://kubernetes.io/docs/concepts/storage/volumes/
 
 Start the stateless job (could be any stateless application, e.g. data processing task, API, etc.)
 ```
-> kubectl create -f .\job-app-manual.yaml
+> kubectl create -f ./job-app-manual.yaml
 job.batch/job-app-hhxf4 created
 ```
 
@@ -153,7 +160,7 @@ As you can see, attached disk location (`/mnt/storage`) was empty, but file coul
 
 Let's try to run the same job again and see whether disk location is empty.
 ```
-> kubectl create -f .\job-app-manual.yaml
+> kubectl create -f ./job-app-manual.yaml
 job.batch/job-app-z4gdr created
 
 > kubectl logs -f job-app-z4gdr-tjbkf -n jobs
@@ -168,7 +175,7 @@ Persistent Volumes docs: https://kubernetes.io/docs/concepts/storage/persistent-
 
 Start job with a Persistent Volume claim
 ```
-> kubectl create -f .\job-app-manual-persistent.yaml
+> kubectl create -f ./job-app-manual-persistent.yaml
 
 // See the logs
 > kubectl logs -f job-app-c2d5r-vgvd6 -n jobs
@@ -179,7 +186,7 @@ After disk write: ['35.txt']
 
 Start the same job again. Now, the calculated number will be loaded from a persistent disk.
 ```
-> kubectl create -f .\job-app-manual-persistent.yaml
+> kubectl create -f ./job-app-manual-persistent.yaml
 
 // See the logs
 > kubectl logs -f job-app-25ztg-2b6gp -n jobs
