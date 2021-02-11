@@ -3,6 +3,7 @@ from time import sleep
 
 import requests
 from flask import Flask
+
 app = Flask(__name__)
 
 CLOUD_APP_HOST = os.getenv('CLOUD_APP_HOST', '127.0.0.1')
@@ -21,10 +22,12 @@ def ready():
     return '', 200
 
 
-@app.route('/edge')
-def edge():
+@app.route('/edge/<job_type>')
+def edge(job_type):
+    print(f'Starting {job_type} on the edge')
+
     try:
-        response = requests.get(EDGE_API_URL)
+        response = requests.get(EDGE_API_URL + '/' + job_type)
 
         if response.status_code == 200:
             return response.json()['result'], 200

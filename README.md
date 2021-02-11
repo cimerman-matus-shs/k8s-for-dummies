@@ -21,7 +21,7 @@ In this tutorial we will use pre-built docker images published on Dockerhub to e
 - Deploy second service in a separated namespace and establish communication between two services.
 
 
-to mention:
+TODO to mention:
 - helm
 - terraform
 - rbac
@@ -69,7 +69,7 @@ See, if we can communicate with the deployed app in the Kubernetes cluster. To d
 ```
 > kubectl port-forward service/cloud-app-service 5000:5000 -n cloud
 
-// Now request the service and you should get correct response
+// Now, you can request the service and get the correct response.
 >  curl http://localhost:5000/
 Hello, World!
 ```
