@@ -25,6 +25,7 @@ TODO to mention:
 - helm
 - terraform
 - rbac
+- replace \ with /
 
 ### Create namespaces
 [Kubernetes supports multiple virtual clusters backed by the same physical cluster. These virtual clusters are called namespaces.](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/)
@@ -127,9 +128,57 @@ Notice that `EDGE_API_URL` environment variable needs to be correctly set to the
 ### Start a stateless Job with Ephemeral storage and see how it works
 Volumes docs: https://kubernetes.io/docs/concepts/storage/volumes/
 
+Start the stateless job (could be any stateless application, e.g. data processing task, API, etc.)
+```
+> kubectl create -f .\job-app-manual.yaml
+job.batch/job-app-hhxf4 created
+```
+
+Now list the pods within the namespace and copy newly created pod name to obtain logs.
+```
+> kubectl logs -f job-app-hhxf4-4sfw4 -n jobs
+Working hard on stateless
+Before disk write: []
+After disk write: ['9227465.txt']
+```
+As you can see, attached disk location (`/mnt/storage`) was empty, but file could be written on disk. Any files written on an ephemeral storage lives there only during lifetime of the pod.
+
+Let's try to run the same job again and see whether disk location is empty.
+```
+> kubectl create -f .\job-app-manual.yaml
+job.batch/job-app-z4gdr created
+
+> kubectl logs -f job-app-z4gdr-tjbkf -n jobs
+Working hard on stateless
+Before disk write: []
+After disk write: ['9227465.txt']
+```
+Disk location was empty as expected. To preserve files saved on a disk location we need to use Persistent Volumes, which are described below.
 
 ### Start a stateful Job with Persistent Volume claim disk attached
 Persistent Volumes docs: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+
+Start job with a Persistent Volume claim
+```
+> kubectl create -f .\job-app-manual-persistent.yaml
+
+// See the logs
+> kubectl logs -f job-app-c2d5r-vgvd6 -n jobs
+Working hard on stateful
+Before disk write: []
+After disk write: ['35.txt']
+```
+
+Start the same job again. Now, the calculated number will be loaded from a persistent disk.
+```
+> kubectl create -f .\job-app-manual-persistent.yaml
+
+// See the logs
+> kubectl logs -f job-app-25ztg-2b6gp -n jobs
+Working hard on stateful
+Before disk write: ['35.txt']
+Reading pre-calculated fib number from file /mnt/storage/35.txt
+```
 
 
 ### Exec into the running pod

@@ -13,12 +13,13 @@ spec:
           - name: EDGE_API_URL
             value: 'http://edge-app-service.edge.svc.cluster.local:5000/job'
           - name: JOB_TYPE
-            value: 'stateless'
+            value: 'stateful'
         volumeMounts:
           - mountPath: /mnt/storage
             name: storage
       volumes:
         - name: storage
-          emptyDir: {}
+          hostPath:
+            path: /c/minikube-pv
       restartPolicy: Never
   backoffLimit: 1

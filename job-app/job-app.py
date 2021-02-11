@@ -2,8 +2,8 @@ import os
 
 JOB_TYPE = os.getenv('JOB_TYPE', 'stateless')
 EDGE_API_URL = os.getenv('EDGE_API_URL', 'http://cluster-dns.edge.edge-app')
-DISK_PATH = '/mnt/storage'
-FIB_N = 35
+DISK_PATH = os.getenv('DISK_PATH', '/mnt/storage')
+FIB_N = int(os.getenv('FIB_N', 35))
 
 
 def do_the_job(job_type):
@@ -14,15 +14,33 @@ def do_the_job(job_type):
 
         print(f'Before disk write: {os.listdir(DISK_PATH)}')
 
-        with open(os.path.join(DISK_PATH, str(n) + '.txt'), 'w') as f:
+        with open(os.path.join(DISK_PATH, str(FIB_N) + '.txt'), 'w') as f:
             f.write(str(n))
 
         print(f'After disk write: {os.listdir(DISK_PATH)}')
 
         return n
     elif job_type == 'stateful':
-        # TODO: try to read from disk
-        pass
+        n = None
+        files = os.listdir(DISK_PATH)
+        print(f'Before disk write: {files}')
+
+        if str(FIB_N) + '.txt' in set(files):  # Try to load pre-calculated fib number from disk
+            path = os.path.join(DISK_PATH, str(FIB_N) + '.txt')
+            print(f'Reading pre-calculated fib number from file {path}')
+            with open(path, 'r') as f:
+                n = f.readline()
+
+        if n is None:
+            n = fib(FIB_N)
+            with open(os.path.join(DISK_PATH, str(FIB_N) + '.txt'), 'w') as f:
+                f.write(str(n))
+
+            print(f'After disk write: {os.listdir(DISK_PATH)}')
+
+        return int(n)
+
+    print('Nothing to return...')
 
 
 def fib(n):
