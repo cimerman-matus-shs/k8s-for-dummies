@@ -40,7 +40,7 @@ List creates namespaces. Note that some "system" namespaces already did exist.
 > kubectl get namespaces
 ```
 
-### Deploy first service
+### Deploy first service Cloud APP
 
 TODO: describe YAML file key points here
 
@@ -75,3 +75,56 @@ Hello, World!
 ```
 
 Bonus: there is an option to expose [running service publicly](https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/expose-intro/). For purposes of this tutorial we will skip this setup.
+
+### Deploy second service Edge APP
+Edge app will be deployed in the separated namespace `edge` and communication between `cloud-app` and `edge-app` across namespaces will be established.
+
+Deploy the application and service
+```
+> kubectl apply -f edge-app/edge-app-deployment.yaml
+```
+
+List pods to see, if app was deployed. _Note: see `-n` argument to list pods from a given namespace._
+```
+> kubectl get pods -n edge
+
+NAME                                   READY   STATUS              RESTARTS   AGE
+edge-app-deployment-6f7bc44796-98ndm   0/1     ContainerCreating   0          9s
+edge-app-deployment-6f7bc44796-d7t9f   0/1     ContainerCreating   0          9s
+edge-app-deployment-6f7bc44796-s5klz   0/1     ContainerCreating   0          9s
+
+// After couple of minutes pods should be running
+NAME                                   READY   STATUS    RESTARTS   AGE
+edge-app-deployment-6f7bc44796-98ndm   1/1     Running   0          114s
+edge-app-deployment-6f7bc44796-d7t9f   1/1     Running   0          114s
+edge-app-deployment-6f7bc44796-s5klz   1/1     Running   0          114s
+```
+
+We will not expose or port-forward `edge-app`, because it can be accessed via `cloud-app`. Let's see how that works.
+
+### Establishing communication between two services across namespaces
+
+First, let's expose `cloud-app`, so we can query it directly
+```
+> kubectl port-forward service/cloud-app-service 5000:5000 -n cloud
+
+> curl http://localhost:5000/
+Hello, World!
+```
+Port-forwarding seems to be working just fine.
+
+Now, let's try to query `edge-app` via `cloud-app` by requesting `/edge` endpoint.
+```
+> curl http://localhost:5000/edge/stateless
+Starting stateless job
+```
+
+Notice that `EDGE_API_URL` environment variable needs to be correctly set to the `'http://edge-app-service.edge.svc.cluster.local:5000/job'` which is Kubernetes internal DNS resolution of the `edge-app-service` running in the `edge` namespace. If this variable was incorrectly set, communication between services would not work.
+
+
+
+
+### Exec into the running pod
+```
+> kubectl exec -it <copy pod name here> -n cloud -- /bin/bash
+```

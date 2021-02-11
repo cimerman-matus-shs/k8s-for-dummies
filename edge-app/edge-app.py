@@ -17,7 +17,7 @@ def ready():
 
 @app.route('/job/<job_type>')
 def job(job_type):
-    if job_type not in [JOB_STATELESS, JOB_STATELESS]:
+    if job_type not in [JOB_STATEFUL, JOB_STATELESS]:
         return f'Unknown job type {job_type}', 404
 
     if job_type == JOB_STATEFUL:

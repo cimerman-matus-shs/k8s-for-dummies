@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: cloud-app
-        image: cimox/cloud-app:0.0.1
+        image: cimox/cloud-app:0.0.4
         ports:
         - containerPort: 5000
         env:
@@ -26,7 +26,7 @@ spec:
           - name: CLOUD_APP_PORT
             value: '5000'
           - name: EDGE_API_URL
-            value: 'http://cluster-dns.edge.edge-app'
+            value: 'http://edge-app-service.edge.svc.cluster.local:5000/job'
 ---
 apiVersion: v1
 kind: Service

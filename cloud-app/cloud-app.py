@@ -30,7 +30,9 @@ def edge(job_type):
         response = requests.get(EDGE_API_URL + '/' + job_type)
 
         if response.status_code == 200:
-            return response.json()['result'], 200
+            return response.text, 200
+
+        return response.text, 503
     except Exception:
         print('EDGE App exception')
 
