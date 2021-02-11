@@ -11,7 +11,7 @@ Choose one:
 1. Install [Minikube](https://minikube.sigs.k8s.io/docs/start/)
 1. Install [MicroK8s](https://microk8s.io/)
 
-## Kubernetes crash course (1 hour)
+# Kubernetes crash course aka K8s for dummies (1 hour)
 
 ## TODO Describe scenario here
 In this tutorial we will use pre-built docker images published on Dockerhub to ease the job. For further details how to define and build docker images please see Docker documentation.
@@ -26,8 +26,9 @@ TODO to mention:
 - terraform
 - rbac
 - replace \ with /
+- minikube dashboard
 
-### Create namespaces
+### 1 Create namespaces
 [Kubernetes supports multiple virtual clusters backed by the same physical cluster. These virtual clusters are called namespaces.](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/)
 
 ```
@@ -41,7 +42,7 @@ List creates namespaces. Note that some "system" namespaces already did exist.
 > kubectl get namespaces
 ```
 
-### Deploy first service Cloud APP
+### 2 Deploy first service Cloud APP
 Deployments docs: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 
 TODO: describe YAML file key points here
@@ -67,6 +68,13 @@ cloud-app-deployment-76c4547875-ftwml   1/1     Running   0          2m22s
 cloud-app-deployment-76c4547875-vvndf   1/1     Running   0          2m22s
 ```
 
+See also deployed service `cloud-app-service`, which will be routing traffic to all 3 replicas of the `cloud-app` running. Service knows how to route traffic based on a correct selector (defined in the YAML file).
+```
+> kubectl get service -n cloud
+NAME                TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+cloud-app-service   ClusterIP   10.100.132.0   <none>        5000/TCP   19h
+```
+
 See, if we can communicate with the deployed app in the Kubernetes cluster. To do that, we need to access `cloud-app` related service named `cloud-app-service`. To do that, we can use port forwarding feature of the Kubernetes.
 Port forwarding docs: https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/
 ```
@@ -79,7 +87,7 @@ Hello, World!
 
 Bonus: there is an option to expose [running service publicly](https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/expose-intro/). For purposes of this tutorial we will skip this setup.
 
-### Deploy second service Edge APP
+### 3 Deploy second service Edge APP
 Edge app will be deployed in the separated namespace `edge` and communication between `cloud-app` and `edge-app` across namespaces will be established.
 
 Deploy the application and service
@@ -105,7 +113,7 @@ edge-app-deployment-6f7bc44796-s5klz   1/1     Running   0          114s
 
 We will not expose or port-forward `edge-app`, because it can be accessed via `cloud-app`. Let's see how that works.
 
-### Establishing communication between two services across namespaces
+### 4 Establishing communication between two services across namespaces
 Port forwarding docs: https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/
 
 First, let's expose `cloud-app`, so we can query it directly
@@ -125,7 +133,7 @@ Starting stateless job
 
 Notice that `EDGE_API_URL` environment variable needs to be correctly set to the `'http://edge-app-service.edge.svc.cluster.local:5000/job'` which is Kubernetes internal DNS resolution of the `edge-app-service` running in the `edge` namespace. If this variable was incorrectly set, communication between services would not work.
 
-### Start a stateless Job with Ephemeral storage and see how it works
+### 5 Start a stateless Job with Ephemeral storage and see how it works
 Volumes docs: https://kubernetes.io/docs/concepts/storage/volumes/
 
 Start the stateless job (could be any stateless application, e.g. data processing task, API, etc.)
@@ -155,7 +163,7 @@ After disk write: ['9227465.txt']
 ```
 Disk location was empty as expected. To preserve files saved on a disk location we need to use Persistent Volumes, which are described below.
 
-### Start a stateful Job with Persistent Volume claim disk attached
+### 6 Start a stateful Job with Persistent Volume claim disk attached
 Persistent Volumes docs: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
 
 Start job with a Persistent Volume claim
@@ -181,7 +189,46 @@ Reading pre-calculated fib number from file /mnt/storage/35.txt
 ```
 
 
-### Exec into the running pod
+## Recommended best practices
+### 1 Resources management
+> "By default, containers run with unbounded compute resources on a Kubernetes cluster."
+
+It is recommended to set resources requests and limits. To do that:
+1. Set namespace Resource Quotas, e.g. how much CPU and memory namespace will be provided with. For more details see docs: https://kubernetes.io/docs/concepts/policy/resource-quotas/
+1. Set Limit Range for a given namespace. This will set minimum and maximum resources (CPU, memory) which can be requested by a single pod or container. For more details see docs: https://kubernetes.io/docs/concepts/policy/limit-range/
+1. Request resources by a Pod or Container. See docs for more details: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/. 
+   
+Example of Resource requests can be seen in `job-app` YAML files.
+
+### 2 Pods lifecycle management
+Each pod has it's own lifecycle. Some application might start running immediately, some might require few seconds or minutes to start. Kubernetes provides mechanism to monitor lifecycle of such applications. Three so called probes are provided by Kubernetes API: Liveness, Readiness and Startup Probes.
+1. [Liveness probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-liveness-command) periodically checks, if application is running and is healthy. I recommend setting this probe for each long-running apllication, e.g. API. Some applications might get stuck, there could be errors, memory leaks, etc. causing to break your services or system.
+1. [Readiness probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-readiness-probes) Sometimes, applications are temporarily unable to serve traffic. For example, an application might need to load large data or configuration files during startup, or depend on external services after startup. In such cases, you don't want to kill the application, but you don't want to send it requests either. Kubernetes provides readiness probes to detect and mitigate these situations. A pod with containers reporting that they are not ready does not receive traffic through Kubernetes Services.
+1. [Startup probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-startup-probes) could be used for slow-starting applications.
+
+Example of Liveness probe and Readiness probe can be seen in the `cloud-app` YAML file.
+
+### 3 External load balancers
+External load balancers can be easily setup within the cluster. It is supported by most of the major public cloud providers. For more info see docs: https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer
+
+### 4 ConfigMaps and Secrets
+- When more complex, or a better controlled (compared to environment variables) configuration is required, ConfigMaps can be used. Added value of ConfigMap is that it can be named and versioned in for instance Helm Charts, but also decoupling configuration from deployment spec. See documentation: https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/
+- If application running in Kubernetes needs to access sensitive information like a database login/password, it is good practice to not store/pass such information as environment variable or a config map. Kubernetes Secrets concept was create exactly for this case. Documentation on Kubernetes Secrets: https://kubernetes.io/docs/concepts/configuration/secret/
+
+### 5 Rolling updates and Rollbacks
+Kubernetes is a great tool for safe updates of the applications running in it. It also provides great interface for performing rollbacks, if something goes wrong.
+- Rolling updates are set by default, meaning that new replica will be started, while old replica killed only when new replica is ready (Readiness probe). This can be indeed configured, see docs: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment
+- Rollback can be performed by a single command, docs: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-a-deployment. Note: it is recommended to follow versioning of the docker image used in each release and also add `--record` argument to keep [history of deployment commands](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment).
+
+### 6 See logs and execute into container
+Docs: https://kubernetes.io/docs/reference/kubectl/cheatsheet/#interacting-with-running-pods
+
+See logs:
+```
+> kubectl logs -f <pod name>
+```
+
+Execute into the running pod and start bash
 ```
 > kubectl exec -it <copy pod name here> -n cloud -- /bin/bash
 ```
