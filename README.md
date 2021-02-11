@@ -121,6 +121,11 @@ Starting stateless job
 
 Notice that `EDGE_API_URL` environment variable needs to be correctly set to the `'http://edge-app-service.edge.svc.cluster.local:5000/job'` which is Kubernetes internal DNS resolution of the `edge-app-service` running in the `edge` namespace. If this variable was incorrectly set, communication between services would not work.
 
+### Start a stateless Job with Ephemeral storage and see how it works
+
+
+
+### Start a stateful Job with Persistent Volume claim disk attached
 
 
 
